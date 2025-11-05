@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import express from "express";
-import connectDB from "./db/index.js"
+import connectDB from "./db/index.js";
 import path from "path";
 import { fileURLToPath } from "url";
 const app = express();
@@ -9,8 +9,8 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: `${__dirname}/../.env` });
-const PORT = process.env.PORT;
+dotenv.config({ path: `./.env` });
+const PORT = process.env.PORT || 8000;
 
 // Global app error listener
 app.on("error", (error) => {
@@ -19,12 +19,11 @@ app.on("error", (error) => {
 });
 
 const startServer = async () => {
-  try {
-    await connectDB()
-    app.listen(PORT, () => console.log("App is listening on port:", PORT));
-  } catch (error) {
-    process.exit(1);
-  }
+  await connectDB();
+  console.log("MongoDB connected successfully");
+  app.listen(PORT || 8000, () =>
+    console.log("App is listening on port:", PORT)
+  );
 };
 
-startServer()
+startServer();
