@@ -1,14 +1,28 @@
 import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import cookieParser from "cookie-parser";
 import connectDB from "./db/index.js";
 import path from "path";
 import { fileURLToPath } from "url";
 const app = express();
+const PORT = process.env.PORT;
 
 // recreate __filename and __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = process.env.PORT;
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  })
+);
+
+app.use(express.json({ limit: "20kb" }));
+app.use(express.urlencoded({ extended: true, limit: "20kb" }));
+app.use(express.static("public")); 
+app.use(cookieParser())
 
 // Global app error listener
 app.on("error", (error) => {
