@@ -1,8 +1,6 @@
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import connectDB from "./db/index.js";
 import path from "path";
 import { fileURLToPath } from "url";
 const app = express();
@@ -29,15 +27,5 @@ app.on("error", (error) => {
   console.log("Error:", error.message);
   process.exit(1);
 });
-
-const startServer = async () => {
-  await connectDB();
-  console.log("MongoDB connected successfully");
-  app.listen(PORT || 8000, () =>
-    console.log("App is listening on port:", PORT)
-  );
-};
-
-startServer();
 
 export { app };

@@ -21,9 +21,7 @@ app.on("error", (error) => {
 const startServer = async () => {
   await connectDB();
   console.log("MongoDB connected successfully");
-  app.listen(PORT || 8000, () =>
-    console.log("App is listening on port:", PORT)
-  );
+  app.listen(PORT, () => console.log("App is listening on port:", PORT));
 };
 
 startServer();
