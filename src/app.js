@@ -1,14 +1,8 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import path from "path";
-import { fileURLToPath } from "url";
-const app = express();
-const PORT = process.env.PORT;
 
-// recreate __filename and __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const app = express();
 
 app.use(
   cors({
@@ -19,8 +13,13 @@ app.use(
 
 app.use(express.json({ limit: "20kb" }));
 app.use(express.urlencoded({ extended: true, limit: "20kb" }));
-app.use(express.static("public")); 
-app.use(cookieParser())
+app.use(express.static("public"));
+app.use(cookieParser());
+
+// routes import
+import userRouter from "./routes/user.route.js";
+// route declaration
+app.use("/api/v1/users", userRouter)
 
 // Global app error listener
 app.on("error", (error) => {
