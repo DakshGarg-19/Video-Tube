@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 8000;
 const startServer = async () => {
   await connectDB();
   console.log("MongoDB connected successfully");
-  app.listen(PORT, () => console.log("App is listening on port:", PORT));
+  app.listen(PORT, () => console.log("Server is running on port:", PORT));
 };
 
 startServer();
