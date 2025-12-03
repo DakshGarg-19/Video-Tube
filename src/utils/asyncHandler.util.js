@@ -13,7 +13,10 @@ export const asyncHandler = (fn) => async (req, res, next) => {
   try {
     await fn(req, res, next);
   } catch (error) {
-    res.status(error.code || 500).json({
+    // Check for statusCode first, then code, then default to 500
+    const statusCode = error.statusCode || error.code || 500;
+
+    res.status(statusCode).json({
       success: false,
       message: error.message,
     });

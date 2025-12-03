@@ -10,8 +10,19 @@ export const validate = (schema) =>
       });
 
       req.body = data; // sanitized data
-      next(); // move to next middleware / controller
+      next();
     } catch (error) {
-      throw new ApiError(400, error.errors?.[0] || "Invalid input");
+      // Check if the error is a Yup Validation Error
+      if (error.name === "ValidationError") {
+        // Yup returns an array of errors in 'error.errors'
+        // Join them to create a single readable message
+        const errorMessage = error.errors.join(", ");
+
+        // Throw your custom ApiError with 400 (Bad Request)
+        throw new ApiError(400, errorMessage);
+      }
+
+      // If it's a different type of error, rethrow it (asyncHandler will catch it)
+      throw error;
     }
   });
