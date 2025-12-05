@@ -18,8 +18,8 @@ export const signupSchema = yup.object({
   fullname: yup
     .string()
     .trim()
-    .min(3, "Username must be at lest 3 characters")
-    .required("is required"),
+    .min(3, "Fullname must be at lest 3 characters")
+    .required("Fullname is required"),
 
   password: yup
     .string()
