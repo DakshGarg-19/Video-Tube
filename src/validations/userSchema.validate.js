@@ -27,3 +27,31 @@ export const signupSchema = yup.object({
     .min(8, "Password must be at least 8 characters long")
     .required("Password is required"),
 });
+
+export const loginSchema = yup
+  .object({
+    username: yup
+      .string()
+      .trim()
+      .lowercase()
+      .min(3, "Username must be at least 3 characters")
+      .max(20, "Username cannot exceed 20 characters")
+      .nullable()
+      .notRequired(),
+
+    email: yup.string().trim().email("Invalid email").nullable().notRequired(),
+
+    password: yup
+      .string()
+      .trim()
+      .min(8, "Password must be at least 8 characters long")
+      .required("Password is required"),
+  })
+  .test(
+    "username-or-email",
+    "Either username or email is required",
+    function (value) {
+      const { username, email } = value;
+      return !!(username || email);
+    }
+  );
