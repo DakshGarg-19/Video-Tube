@@ -6,6 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.util.js";
 import fs from "fs";
 import { options } from "../constants.js";
 import jwt from "jsonwebtoken";
+import { v2 as cloudinary } from "cloudinary";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -27,6 +28,8 @@ const generateAccessAndRefreshTokens = async (userId) => {
     );
   }
 };
+
+// res doesn't need to be returned, express already does it.
 
 export const registerUser = asyncHandler(async (req, res) => {
   // Get user details from frontend -> Username, Fullname, Email, Avatar, Password
@@ -76,8 +79,11 @@ export const registerUser = asyncHandler(async (req, res) => {
     username,
     email,
     fullname,
-    avatar: avatar.url,
-    coverImage: coverImage?.url || "",
+    avatar: { url: avatar.secure_url, publicId: avatar.public_id },
+    coverImage: {
+      url: coverImage?.secure_url || "",
+      publicId: coverImage?.public_id,
+    },
     password,
   });
 
@@ -212,4 +218,169 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 
     throw new ApiError(401, error?.message || "Invalid refresh token");
   }
+});
+
+export const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.user?._id);
+
+  if (!user) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  const isPasswordCorrect = await user.isPasswordCorrect(currentPassword);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(401, "Invalid credentials");
+  }
+
+  user.password = newPassword;
+  // invalidate existing sessions
+  user.refreshToken = undefined;
+  await user.save();
+
+  const sanitizedUser = user.toObject();
+  delete sanitizedUser.password;
+  delete sanitizedUser.refreshToken;
+
+  return res
+    .status(200)
+    .clearCookie("refreshToken")
+    .clearCookie("accessToken")
+    .json(new ApiResponse(200, sanitizedUser, "Password changed successfully"));
+});
+
+export const getCurrentUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(200, req.user, "Current user fetched successfully");
+});
+
+export const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { username, email, fullname } = req.body;
+
+  const updateFields = {};
+
+  if (username !== undefined) updateFields.username = username;
+  if (email !== undefined) updateFields.email = email;
+  if (fullname !== undefined) updateFields.fullname = fullname;
+
+  if (Object.keys(updateFields).length === 0) {
+    throw new ApiError(400, "No fields provided for update");
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user?._id,
+    { $set: updateFields },
+    { new: true, runValidators: true }
+  ).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "Account updated successfully"));
+});
+
+export const updateUserAvatar = asyncHandler(async (req, res) => {
+  // Step-by-step (battle-tested order)
+  //  - Receive file → stored temporarily (disk / memory)
+  //  - Upload new avatar to Cloudinary
+  //  - Get secure_url and public_id
+  //  - Update DB with new avatar URL + public_id
+  //  - Delete old avatar from Cloudinary
+  //  - Delete local temp file
+  //  - If any step fails before step 4, the old avatar stays untouched. Safe.
+
+  const avatarLocalPath = req.file?.path;
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar file is missing");
+  }
+
+  const user = await User.findById(req.user._id).select(
+    "-password -refreshToken"
+  );
+
+  if (!user) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  const oldAvatarPublicId = user.avatar?.publicId;
+
+  const uploadedNewAvatar = await uploadOnCloudinary(avatarLocalPath);
+
+  if (!uploadedNewAvatar?.secure_url) {
+    throw new ApiError(500, "Avatar upload failed");
+  }
+
+  // Update DB first
+  user.avatar = {
+    url: uploadedNewAvatar.secure_url,
+    publicId: uploadedNewAvatar.public_id,
+  };
+
+  await user.save();
+
+  // Orphans must be rare, bounded, and discoverable
+  if (oldAvatarPublicId) {
+    cloudinary.uploader.destroy(oldAvatarPublicId).catch((err) => {
+      console.error("Cleanup failed:", err);
+    });
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Avatar image updated successfully"));
+});
+
+export const updateUserCoverImage = asyncHandler(async (req, res) => {
+  // Step-by-step (battle-tested order)
+  //  - Receive file → stored temporarily (disk / memory)
+  //  - Upload new coverImage to Cloudinary
+  //  - Get secure_url and public_id
+  //  - Update DB with new coverImage URL + public_id
+  //  - Delete old coverImage from Cloudinary
+  //  - Delete local temp file
+  //  - If any step fails before step 4, the old coverImage stays untouched. Safe.
+
+  const coverImageLocalPath = req.file?.path;
+
+  if (!coverImageLocalPath) {
+    throw new ApiError(400, "Cover image file is missing");
+  }
+
+  const user = await User.findById(req.user._id).select(
+    "-password -refreshToken"
+  );
+
+  if (!user) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  const oldCoverImagePublicId = user.coverImage?.publicId;
+
+  const uploadedNewCoverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+  if (!uploadedNewCoverImage?.secure_url) {
+    throw new ApiError(500, "Cover image upload failed");
+  }
+
+  // Update DB first
+  user.coverImage = {
+    url: uploadedNewCoverImage.secure_url,
+    publicId: uploadedNewCoverImage.public_id,
+  };
+
+  await user.save();
+
+  // Orphans must be rare, bounded, and discoverable
+  if (oldCoverImagePublicId) {
+    cloudinary.uploader.destroy(oldCoverImagePublicId).catch((err) => {
+      console.error("Cleanup failed:", err);
+    });
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Cover image updated successfully"));
 });

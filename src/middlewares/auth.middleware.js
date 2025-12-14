@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.util.js";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 
+// verifies if user is logged In
 export const verifyJWT = asyncHandler(async (req, _, next) => {
   try {
     const token =

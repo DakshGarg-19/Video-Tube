@@ -25,11 +25,23 @@ const userSchema = new Schema(
       trim: true,
     },
     avatar: {
-      type: String, // cloudinary url or url from google oAuth
-      required: true,
+      url: {
+        type: String, // cloudinary url or url from google oAuth
+        required: true,
+      },
+      publicId: {
+        type: String, // extracted from cloudinary response
+        default: null
+      },
     },
     coverImage: {
-      type: String,
+      url: {
+        type: String, // cloudinary url
+      },
+      publicId: {
+        type: String, // extracted from cloudinary response
+        default: null
+      },
     },
     watchHistory: {
       type: Schema.Types.ObjectId,
