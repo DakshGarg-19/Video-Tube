@@ -3,15 +3,32 @@ import { Schema, model } from "mongoose";
 const subscriptionSchema = new Schema(
   {
     subscriber: {
-      type: Schema.Types.ObjectId, // one who is subscribing
+      // one who is subscribing
+      type: Schema.Types.ObjectId,
       ref: "User",
+      required: true,
+      index: true,
     },
     channel: {
-      type: Schema.Types.ObjectId, // one to whom 'subscriber' is subscribing
+      // one to whom 'subscriber' is subscribing
+      type: Schema.Types.ObjectId,
       ref: "User",
+      required: true,
+      index: true,
     },
   },
   { timestamps: true }
 );
+
+// Enforce one subscription per user per channel
+subscriptionSchema.index({ subscriber: 1, channel: 1 }, { unique: true });
+
+// Optional but smart: prevent self-subscription
+subscriptionSchema.pre("save", function (next) {
+  if (this.subscriber.equals(this.channel)) {
+    return next(new ApiError(400, "User cannot subscribe to themselves"));
+  }
+  next();
+});
 
 export const Subscription = model("Subscription", subscriptionSchema);
