@@ -31,7 +31,7 @@ const userSchema = new Schema(
       },
       publicId: {
         type: String, // extracted from cloudinary response
-        default: null
+        default: null,
       },
     },
     coverImage: {
@@ -40,12 +40,8 @@ const userSchema = new Schema(
       },
       publicId: {
         type: String, // extracted from cloudinary response
-        default: null
+        default: null,
       },
-    },
-    watchHistory: {
-      type: Schema.Types.ObjectId,
-      ref: "Video",
     },
     password: {
       type: String,
