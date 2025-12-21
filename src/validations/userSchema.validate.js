@@ -13,7 +13,7 @@ export const signupSchema = yup.object({
     .string()
     .trim()
     .email("Invalid email")
-    .required("Email is required."),
+    .required("Email is required"),
 
   fullname: yup
     .string()

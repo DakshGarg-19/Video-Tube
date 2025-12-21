@@ -8,7 +8,6 @@ import { options } from "../constants.js";
 import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
-import { pipeline } from "stream";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
